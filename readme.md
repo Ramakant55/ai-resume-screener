@@ -13,3 +13,10 @@ User:
 
 
  //npm install -g npm@11.2.0
+
+ ->key words extractions and to provide score tto resume
+ ->natural ->it will be used to extract key words using nlp library
+ ->brain.js->neural network based job recommanded model
+ ->axiosfor external apis
+
+ npm install natural brain.js axios   compromise
