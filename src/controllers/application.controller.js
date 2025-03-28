@@ -55,6 +55,35 @@ exports.filterApplicationsBySkills = async (req, res) => {
   };
 
 
+//get applications for the logged-in user
+exports.getMyApplications = async (req, res) => {
+    try {
+        // Ensure the user object exists in the request
+        if (!req.user || !req.user.id) {
+            console.error("User ID not found in request:", req.user);
+            return res.status(401).json({ message: "User authentication failed or user ID missing" });
+        }
+        
+        const userId = req.user.id;
+        console.log("Fetching applications for user:", userId);
+        
+        // Improved query to handle different formats of userId (string or ObjectId)
+        const applications = await Application.find({ 
+            $or: [
+                { userId: userId }, 
+                { 'userId._id': userId }
+            ] 
+        }).populate("jobId", "title company location");
+        
+        console.log(`Found ${applications.length} applications for user ${userId}`);
+        
+        res.status(200).json(applications);
+    } catch (err) {
+        console.error("Error in getMyApplications:", err);
+        res.status(500).json({ message: "An error occurred while getting your applications" });
+    }
+};
+
 //update application status(admin only)
 exports.updateApplicationStatus = async (req, res) => {
     try {
