@@ -21,11 +21,14 @@ exports.postJob = async (req, res) => {
 exports.reviewJob = async (req, res) => {
     try {
         const { jobId, status } = req.body;
-        if (!["approved", "rejected"]) {
+        if (!status || !["approved", "rejected"].includes(status)) {
             return res.status(400).json({ message: "Invalid status" });
         }
-        await Job.findByIdAndUpdate(jobId, { status });
-        return res.status(200).json({ message: `Job ${status} successfully` });
+        const updatedJob = await Job.findByIdAndUpdate(jobId, { status }, { new: true });
+        if (!updatedJob) {
+            return res.status(404).json({ message: "Job not found" });
+        }
+        return res.status(200).json({ message: `Job ${status} successfully`, job: updatedJob });
     } catch(err) {
         console.log(err);
         return res.status(500).json({ message: "An error occurred during review the job" });
@@ -39,5 +42,25 @@ exports.getJobs = async (req, res) => {
     } catch (err) {
         console.log(err);
         res.status(500).json({ message: "An error occurred while fetching jobs" });
+    }
+}
+
+exports.getPendingJobs = async (req, res) => {
+    try {
+        const pendingJobs = await Job.find({ status: "pending" }).populate('createdBy', 'name email');
+        res.status(200).json(pendingJobs);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ message: "An error occurred while fetching pending jobs" });
+    }
+}
+
+exports.getUserJobs = async (req, res) => {
+    try {
+        const userJobs = await Job.find({ createdBy: req.user.id });
+        res.status(200).json(userJobs);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ message: "An error occurred while fetching user jobs" });
     }
 }
