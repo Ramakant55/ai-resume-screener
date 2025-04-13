@@ -41,18 +41,32 @@ exports.getApplications=async(req,res)=>{
 
 exports.filterApplicationsBySkills = async (req, res) => {
     try {
-        const { jobId, requiredSkills } = req.body;   
-        const applications = await Application.find({ jobId }).populate("userId", "name email");
+        const { requiredSkills } = req.body;
+        if (!requiredSkills || !Array.isArray(requiredSkills)) {
+            return res.status(400).json({ message: "Required skills must be provided as an array" });
+        }
+
+        // Get all applications and populate necessary fields
+        const applications = await Application.find().populate("userId jobId", "name email title company");
+        
+        // Filter applications based on skills
         const filteredApplications = applications.filter(application => {
-            const matchedSkills = application.skills.filter(skill => requiredSkills.includes(skill));
-            return matchedSkills.length > 0;  
+            if (!application.skills || !Array.isArray(application.skills)) return false;
+            const matchedSkills = application.skills.filter(skill => 
+                requiredSkills.some(reqSkill => 
+                    skill.toLowerCase().includes(reqSkill.toLowerCase())
+                )
+            );
+            return matchedSkills.length > 0;
         });
+
+        console.log(`Found ${filteredApplications.length} applications matching the skills criteria`);
         res.status(200).json(filteredApplications);
     } catch (error) {
-        console.log(error);
+        console.error("Error in filterApplicationsBySkills:", error);
         return res.status(500).json({ message: "An error occurred while filtering applications" });
     }
-  };
+};
 
 
 //get applications for the logged-in user

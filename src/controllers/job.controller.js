@@ -37,10 +37,40 @@ exports.reviewJob = async (req, res) => {
 
 exports.getJobs = async (req, res) => {
     try {
-        const jobs = await Job.find({ status: "approved" });
-         res.status(200).json(jobs);
+        // Import Application model at the top level
+        const Application = require('../models/application.model');
+        
+        // Get all approved jobs
+        const jobs = await Job.find({});
+        
+        // Create an array to hold the enhanced job objects
+        const enhancedJobs = [];
+        
+        // Process each job to add application count
+        for (const job of jobs) {
+            // Count applications for this job
+            const applicationCount = await Application.countDocuments({ jobId: job._id });
+            
+            // Convert to plain object and add application count
+            const jobObj = job.toObject();
+            jobObj.applicationCount = applicationCount;
+            
+            // Add to results array
+            enhancedJobs.push(jobObj);
+        }
+        
+        // Log for debugging
+        console.log('Jobs with application counts:', 
+            enhancedJobs.map(j => ({ 
+                title: j.title, 
+                id: j._id, 
+                applicationCount: j.applicationCount 
+            }))
+        );
+        
+        res.status(200).json(enhancedJobs);
     } catch (err) {
-        console.log(err);
+        console.log('Error in getJobs:', err);
         res.status(500).json({ message: "An error occurred while fetching jobs" });
     }
 }
